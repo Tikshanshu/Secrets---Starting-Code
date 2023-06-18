@@ -5,15 +5,20 @@ const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
 
+const bcrypt = require("bcrypt");
+const saltRounds= 10;
 
-// level 2===I am removing this because i am using hash function for password encryption:- (md5)
+
+// I am removing this because i am using hash function for password encryption:- (md5)
 //const encrypt = require("mongoose-encryption");
 
-const md5 = require("md5");
+
+// I am removing this because I am gonna use bcrypt hash so i need to remove md5 from this file wherever it is.
+//const md5 = require("md5");
 
 const app =express();
 
-console.log(process.env.API_KEY);
+
 
 app.use(express.static("public"));
 app.set('view engine','ejs');
@@ -63,27 +68,36 @@ app.get("/register",function(req,res){
 
 
 app.post("/register",function(req,res){
-    const newUser = new User({
-        email:req.body.username,
-        password:md5(req.body.password)
+
+    bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+
+        const newUser = new User({
+            email:req.body.username,
+            password:hash
+        });
+        newUser.save();
+        res.render("secrets");
     });
-    newUser.save();
-    res.render("secrets");
+    
+   
 });
 
 app.post("/login",function(req,res){
     const username =req.body.username;
-    const password = md5(req .body.password);
+    const password = req .body.password;
 
     run()
     async function run(){
         const foundUser = await User.findOne({email:username});
         if(foundUser)
         {
-            if(foundUser.password === password)
-            {
-                res.render("secrets");
-            }
+          const result=  bcrypt.compare(password, foundUser.password );
+                if(result)
+                {
+                    res.render("secrets");
+                }
+            
+            
         }
     }
     
